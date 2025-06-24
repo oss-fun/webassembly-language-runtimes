@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(sqlite_example)
+project(sqlite.wasm)
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "WASI")
     set(CMAKE_EXECUTABLE_SUFFIX ".wasm")
 endif()
 
 add_executable(
-    sqlite_example
+    sqlite.wasm
     kvs.c
 )
 
@@ -19,6 +19,6 @@ include_directories(AFTER
     ${SQLITE3_INCLUDE_DIRS}
 )
 
-target_link_libraries(sqlite_example PUBLIC
+target_link_libraries(sqlite.wasm PUBLIC
         PkgConfig::SQLITE3
 )

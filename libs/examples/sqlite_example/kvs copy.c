@@ -22,76 +22,14 @@ int file_exists(char *file_path)
   return (stat(file_path, &buff) == 0);
 }
 
-void print_progress_bar(int current, int total) {
-    int bar_width = 40;  // 進捗バーの横幅
-    float progress = (float)current / total;
-    int pos = (int)(bar_width * progress);
-
-    printf("\r[");
-    for (int i = 0; i < bar_width; ++i) {
-        if (i < pos) {
-            // 緑色で表示
-            printf("\x1b[32m#\x1b[0m");
-        } else {
-            printf("-");
-        }
-    }
-    printf("] %3d%% (%d/%d)", (int)(progress * 100), current, total);
-    fflush(stdout);
-
-    if (current == total) {
-        printf("\n");
-    }
-}
-
-int write_db(int total, sqlite3 *db) {
-    for (int i = 0; i < total; i++) {
-        if (insert(i, i*i, db) != 0) {
-            fprintf(stderr, "Insert error at %d\n", i);
-            break;
-        }
-
-        int dividee = 1;
-        if (total/100 > 0) dividee = total / 100;
-        if (i % dividee == 0) {
-          print_progress_bar(i, total);
-          // printf("Progress: inserted %d records...\n", i);
-        }
-    }
-    printf("\n");
-    fflush(stdout);
-}
-
-void print_intro() {
-    printf("\x1b[36m"); // 青緑色
-    printf("========================================\n");
-    printf("         🧪 SQLite Sample CLI           \n");
-    printf("========================================\n");
-    printf("\x1b[0m");
-
-    printf("This tool demonstrates simple SQLite usage:\n");
-    printf("  - Bulk insertion with predictable key-value pairs\n");
-    printf("  - Fast lookup of inserted data\n\n");
-
-    printf("\x1b[4mModes:\x1b[0m\n");
-    printf("  \x1b[32m[0] Write Mode\x1b[0m\n");
-    printf("      Inserts entries of the form: (key, value) = (i, i * i)\n");
-    printf("      → You specify how many entries (N) to insert.\n");
-    printf("      → Inserts keys from 0 to N - 1.\n\n");
-
-    printf("  \x1b[34m[1] Read Mode\x1b[0m\n");
-    printf("      Input a key → returns corresponding value (if found).\n\n");
-
-    printf("  \x1b[31m[2] Exit\x1b[0m\n");
-    printf("      Cleanly terminates the program.\n");
-
-    printf("----------------------------------------------------\n");
-    printf("\x1b[3mTip:\x1b[0m Use this to test SQLite performance or simulate app state.\n");
-    printf("----------------------------------------------------\n\n");
-}
-
 int main(int argc, char **argv)
 {
+  // Input is incorrect.
+  // if (0 == strcmp(argv[1], "--help") || 0 == strcmp(argv[1], "-h"))
+  // {
+  //   fprintf(stderr, USAGE_FMT, argv[0], argv[0]);
+  //   return -1;
+  // }
 
   // Open the database in memory.
   sqlite3 *db;
@@ -112,12 +50,12 @@ int main(int argc, char **argv)
     printf("%s\n", err_msg);
     return -1;
   }
-  /* printf("CREATE TABLE!\n"); */
-  print_intro();
+  printf("CREATE TABLE!\n");
+
 
   while (1) {
     // set: 0, get: 1, migration: 2, exit: other
-    printf("\x1b[32m[+] Input 0(write) or 1(read) or 2(exit)\n\x1b[m");
+    printf("\x1b[32m[+] Input 0(set) or 1(get) or 2(migration) or other\n\x1b[m");
 
     int command = 0;
     char input_str[100];
@@ -143,11 +81,18 @@ int main(int argc, char **argv)
 
     switch (command) {
       int key, val, sleep_seccond;
-      int entries;
       case 0:
-        printf("\x1b[32m[+] SET MODE: Please input 'number of entries'\n\x1b[m");
-        scanf("%d", &entries);
-        write_db(entries, db);
+        printf("\x1b[32m[+] SET MODE: Please input 'key', 'value'\n\x1b[m");
+        scanf("%d, %d", &key, &val);
+        // Insert
+        if (insert(key, val, db) != 0) {
+          printf("\x1b[31m");
+          printf("[ERROR] failed to insert\n");
+          printf("\x1b[m");
+
+          sqlite3_close(db);
+          return -1;
+        }
         break;
       case 1:
         printf("\x1b[32m[+] GET MODE: Please input 'key'\n\x1b[m");
@@ -163,11 +108,14 @@ int main(int argc, char **argv)
         }
         break;
       case 2:
+        sleep_seccond = 1;
+        printf("\x1b[32m[+] MIGRATION MODE: Sleep(%ds)\n\x1b[m", sleep_seccond);
+        sleep(sleep_seccond);
+        break;
+      default:
         printf("Exit\n");
         sqlite3_close(db);
         return 0;
-      default:
-        continue;
     }
   }
 

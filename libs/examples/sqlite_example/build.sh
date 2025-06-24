@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-export TARGET_NAME=sqlite_example
+export TARGET_NAME=sqlite.wasm
 
 function run_build {
     echo Building  ${TARGET_DIR} ...
