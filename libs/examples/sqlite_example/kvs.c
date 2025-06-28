@@ -4,6 +4,21 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
+// WebAssembly NOP instruction macro
+#if defined(__wasm__) || defined(__wasm32__)
+    #define WASM_NOP() __asm__ volatile ("nop")
+#else
+    // Fallback: CPU-specific nop for native compilation
+    #if defined(__x86_64__) || defined(__i386__)
+        #define WASM_NOP() __asm__ volatile ("nop" ::: "memory")
+    #elif defined(__aarch64__) || defined(__arm__)
+        #define WASM_NOP() __asm__ volatile ("nop" ::: "memory")
+    #else
+        // Generic fallback - volatile operation to prevent optimization
+        #define WASM_NOP() do { volatile int dummy = 0; (void)dummy; } while(0)
+    #endif
+#endif
+
 static char *USAGE_FMT =
 "Usage: %s DB_FILE\n"
 "   DB_FILE always gets overwritten with a database with basic 'Sample' table.\n"
@@ -45,7 +60,15 @@ void print_progress_bar(int current, int total) {
 }
 
 int write_db(int total, sqlite3 *db) {
+    int halfway = total / 2;
+    
     for (int i = 0; i < total; i++) {
+        // Check if we've reached the halfway point
+        if (i == halfway) {
+            // Insert WebAssembly nop instructions
+            WASM_NOP();
+        }
+        
         if (insert(i, i*i, db) != 0) {
             fprintf(stderr, "Insert error at %d\n", i);
             break;
