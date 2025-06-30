@@ -138,6 +138,12 @@ int main(int argc, char **argv)
   /* printf("CREATE TABLE!\n"); */
   print_intro();
 
+  // Check for auto-test option
+  if (argc > 1 && strcmp(argv[1], "--auto-test") == 0) {
+      printf("\x1b[32m[INFO] Auto-test mode enabled: Writing 1000 entries...\x1b[0m\n");
+      write_db(1000, db);
+  }
+
   while (1) {
     // set: 0, get: 1, migration: 2, exit: other
     printf("\x1b[32m[+] Input 0(write) or 1(read) or 2(exit)\n\x1b[m");
